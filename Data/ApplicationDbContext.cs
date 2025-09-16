@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using DurbanMunicipalApp.Models;
 
 namespace DurbanMunicipalApp.Data
 {
@@ -9,5 +10,6 @@ namespace DurbanMunicipalApp.Data
             : base(options)
         {
         }
+        public DbSet<Report> Reports { get; set; }
     }
 }

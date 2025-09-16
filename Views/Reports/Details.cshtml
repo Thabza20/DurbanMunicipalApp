@@ -1,0 +1,216 @@
+@model DurbanMunicipalApp.Models.Report
+
+@{
+    ViewData["Title"] = "Report Details";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0"><i class="fas fa-check-circle me-2"></i>Report Submitted Successfully</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" role="alert">
+                        <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Reference Number</h5>
+                        <p class="mb-0"><strong>@Model.ReferenceNumber</strong></p>
+                        <small>Please keep this reference number for tracking your report.</small>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                    {
+                        <div class="alert alert-success" role="alert">
+                            <h5 class="alert-heading"><i class="fas fa-mobile-alt me-2"></i>Get Reference Number on Your Phone</h5>
+                            <p class="mb-2">Send your reference number to your phone:</p>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a href="https://wa.me/@(Model.PhoneNumber.Replace("+", "").Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", ""))?text=@Uri.EscapeDataString($"Reference Number: {Model.ReferenceNumber} - Track at: {Context.Request.Scheme}://{Context.Request.Host}/Reports/Details/{Model.Id}")" 
+                                   class="btn btn-success btn-sm" target="_blank">
+                                    <i class="fab fa-whatsapp me-1"></i> WhatsApp
+                                </a>
+                                <button class="btn btn-primary btn-sm" onclick="copyToClipboard('@Model.ReferenceNumber')">
+                                    <i class="fas fa-copy me-1"></i> Copy Reference
+                                </button>
+                                <button class="btn btn-info btn-sm" onclick="sendSMS('@Model.PhoneNumber', '@Model.ReferenceNumber')">
+                                    <i class="fas fa-sms me-1"></i> Send SMS
+                                </button>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3"><i class="fas fa-clipboard-list me-2"></i>Report Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td class="fw-bold">Problem Type:</td>
+                                    <td>
+                                        <span class="badge bg-primary">@Html.DisplayFor(model => model.ProblemType)</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Status:</td>
+                                    <td>
+                                        @{
+                                            var statusClass = Model.Status switch
+                                            {
+                                                DurbanMunicipalApp.Models.ReportStatus.Submitted => "bg-secondary",
+                                                DurbanMunicipalApp.Models.ReportStatus.UnderReview => "bg-warning",
+                                                DurbanMunicipalApp.Models.ReportStatus.InProgress => "bg-info",
+                                                DurbanMunicipalApp.Models.ReportStatus.Resolved => "bg-success",
+                                                DurbanMunicipalApp.Models.ReportStatus.Closed => "bg-dark",
+                                                _ => "bg-secondary"
+                                            };
+                                        }
+                                        <span class="badge @statusClass">@Html.DisplayFor(model => model.Status)</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Submitted Date:</td>
+                                    <td>@Model.SubmittedDate.ToString("MMM dd, yyyy 'at' h:mm tt")</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Last Updated:</td>
+                                    <td>@Model.LastUpdated.ToString("MMM dd, yyyy 'at' h:mm tt")</td>
+                                </tr>
+                                @if (!string.IsNullOrEmpty(Model.Location))
+                                {
+                                    <tr>
+                                        <td class="fw-bold">Location:</td>
+                                        <td>@Model.Location</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <h5 class="text-primary mb-3"><i class="fas fa-align-left me-2"></i>Description</h5>
+                                <div class="border rounded p-3 bg-light">
+                                    <p class="mb-0">@Model.Description</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.PicturePath))
+                    {
+                        <div class="mt-4">
+                            <h5 class="text-primary mb-3"><i class="fas fa-image me-2"></i>Attached Picture</h5>
+                            <div class="text-center">
+                                <img src="@Model.PicturePath" class="img-fluid rounded shadow" style="max-height: 400px;" alt="Report Picture" />
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+                    {
+                        <div class="mt-4">
+                            <h5 class="text-primary mb-3"><i class="fas fa-map me-2"></i>Location on Map</h5>
+                            <div id="map" style="height: 300px; width: 100%; border-radius: 8px;" class="border"></div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <div class="mt-4">
+                            <h5 class="text-primary mb-3"><i class="fas fa-sticky-note me-2"></i>Additional Notes</h5>
+                            <div class="border rounded p-3 bg-light">
+                                <p class="mb-0">@Model.Notes</p>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mt-4">
+                        <h5 class="text-primary mb-3"><i class="fas fa-tasks me-2"></i>What Happens Next?</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-search fa-2x text-primary mb-2"></i>
+                                        <h6>Under Review</h6>
+                                        <small class="text-muted">Your report is being reviewed by our team</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-tools fa-2x text-warning mb-2"></i>
+                                        <h6>In Progress</h6>
+                                        <small class="text-muted">Our team is working on resolving the issue</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                                        <h6>Resolved</h6>
+                                        <small class="text-muted">The issue has been resolved</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a asp-action="Create" class="btn btn-primary me-md-2">
+                            <i class="fas fa-plus"></i> Submit Another Report
+                        </a>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="fas fa-list"></i> View All Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Latitude.HasValue && Model.Longitude.HasValue)
+{
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+    <script>
+        function initMap() {
+            const location = { lat: @Model.Latitude.Value, lng: @Model.Longitude.Value };
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 15,
+                center: location,
+            });
+            const marker = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: "Report Location"
+            });
+        }
+    </script>
+}
+
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Show success message
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+            button.classList.add('btn-success');
+            button.classList.remove('btn-primary');
+            
+            setTimeout(function() {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-success');
+                button.classList.add('btn-primary');
+            }, 2000);
+        }).catch(function(err) {
+            console.error('Could not copy text: ', err);
+            alert('Could not copy to clipboard. Please copy manually: ' + text);
+        });
+    }
+
+    function sendSMS(phoneNumber, referenceNumber) {
+        const message = `Reference Number: ${referenceNumber} - Track your report at: ${window.location.origin}/Reports/Details/@Model.Id`;
+        const smsUrl = `sms:${phoneNumber}?body=${encodeURIComponent(message)}`;
+        window.open(smsUrl);
+    }
+</script>

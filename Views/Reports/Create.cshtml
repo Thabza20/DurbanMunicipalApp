@@ -1,0 +1,208 @@
+@model DurbanMunicipalApp.Models.Report
+
+@{
+    ViewData["Title"] = "Create Report";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Submit New Report</h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" enctype="multipart/form-data" id="reportForm" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ProblemType" class="form-label fw-bold">Problem Type <span class="text-danger">*</span></label>
+                                    <select asp-for="ProblemType" class="form-select" id="problemType">
+                                        <option value="">-- Select Problem Type --</option>
+                                        <option value="@ProblemType.WaterLeak">Water Leak</option>
+                                        <option value="@ProblemType.NoWater">No Water</option>
+                                        <option value="@ProblemType.WaterQuality">Water Quality</option>
+                                        <option value="@ProblemType.SewerIssue">Sewer Issue</option>
+                                        <option value="@ProblemType.Other">Other</option>
+                                    </select>
+                                    <span asp-validation-for="ProblemType" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PhoneNumber" class="form-label fw-bold">Phone Number</label>
+                                    <input asp-for="PhoneNumber" class="form-control" placeholder="Enter your phone number (e.g., +1234567890)" />
+                                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                                    <small class="form-text text-muted">Optional - for receiving reference number via WhatsApp/SMS</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Location</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="locationInput" placeholder="Enter location or click 'Get My Location'">
+                                        <button type="button" class="btn btn-outline-secondary" id="getLocationBtn">
+                                            <i class="fas fa-map-marker-alt"></i> Get My Location
+                                        </button>
+                                    </div>
+                                    <input type="hidden" asp-for="Location" id="locationHidden" />
+                                    <input type="hidden" asp-for="Latitude" id="latitudeHidden" />
+                                    <input type="hidden" asp-for="Longitude" id="longitudeHidden" />
+                                    <small class="form-text text-muted">For "No Water" reports, location will be automatically captured.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-warning">
+                                <strong>Validation errors:</strong>
+                                <ul>
+                                @foreach (var entry in ViewData.ModelState)
+                                {
+                                    foreach (var error in entry.Value.Errors)
+                                    {
+                                        <li>@entry.Key: @error.ErrorMessage</li>
+                                    }
+                                }
+                                </ul>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">Description <span class="text-danger" id="descriptionRequired">*</span></label>
+                            <textarea asp-for="Description" class="form-control" rows="4" placeholder="Please provide a detailed description of the problem..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <small class="form-text text-muted" id="descriptionHelp">Required for all problem types except "No Water".</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Picture <span class="text-danger" id="pictureRequired">*</span></label>
+                            <input type="file" class="form-control" id="pictureInput" name="picture" accept="image/*" />
+                            <span asp-validation-for="PicturePath" class="text-danger"></span>
+                            <small class="form-text text-muted" id="pictureHelp">Required for all problem types except "No Water". If submission shows validation errors, please reselect the file.</small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const problemTypeSelect = document.getElementById('problemType');
+            const descriptionTextarea = document.querySelector('textarea[name="Description"]');
+            const pictureInput = document.getElementById('pictureInput');
+            const getLocationBtn = document.getElementById('getLocationBtn');
+            const locationInput = document.getElementById('locationInput');
+            const locationHidden = document.getElementById('locationHidden');
+            const latitudeHidden = document.getElementById('latitudeHidden');
+            const longitudeHidden = document.getElementById('longitudeHidden');
+            const descriptionRequired = document.getElementById('descriptionRequired');
+            const pictureRequired = document.getElementById('pictureRequired');
+            const descriptionHelp = document.getElementById('descriptionHelp');
+            const pictureHelp = document.getElementById('pictureHelp');
+
+            // Handle problem type change
+            problemTypeSelect.addEventListener('change', function() {
+                const isNoWater = this.value === '@ProblemType.NoWater';
+                
+                if (isNoWater) {
+                    descriptionRequired.style.display = 'none';
+                    pictureRequired.style.display = 'none';
+                    descriptionHelp.textContent = 'Optional for "No Water" reports.';
+                    pictureHelp.textContent = 'Optional for "No Water" reports.';
+                    
+                    // Auto-capture location for No Water
+                    getCurrentLocation();
+                } else {
+                    descriptionRequired.style.display = 'inline';
+                    pictureRequired.style.display = 'inline';
+                    descriptionHelp.textContent = 'Required for all problem types except "No Water".';
+                    pictureHelp.textContent = 'Required for all problem types except "No Water".';
+                }
+            });
+
+
+            // Get current location
+            getLocationBtn.addEventListener('click', getCurrentLocation);
+
+            function getCurrentLocation() {
+                if (navigator.geolocation) {
+                    getLocationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting Location...';
+                    getLocationBtn.disabled = true;
+                    
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            
+                            latitudeHidden.value = lat;
+                            longitudeHidden.value = lng;
+                            
+                            // Reverse geocoding to get address
+                            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const address = `${data.locality || ''} ${data.city || ''} ${data.principalSubdivision || ''} ${data.countryName || ''}`.trim();
+                                    locationInput.value = address;
+                                    locationHidden.value = address;
+                                })
+                                .catch(() => {
+                                    locationInput.value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                                    locationHidden.value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+                                });
+                            
+                            getLocationBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Get My Location';
+                            getLocationBtn.disabled = false;
+                        },
+                        function(error) {
+                            console.error('Error getting location:', error);
+                            alert('Unable to get your location. Please enter it manually.');
+                            getLocationBtn.innerHTML = '<i class="fas fa-map-marker-alt"></i> Get My Location';
+                            getLocationBtn.disabled = false;
+                        }
+                    );
+                } else {
+                    alert('Geolocation is not supported by this browser.');
+                }
+            }
+
+            // Update hidden location field when typing
+            locationInput.addEventListener('input', function() {
+                locationHidden.value = this.value;
+            });
+
+            // Add form submission debugging
+            document.getElementById('reportForm').addEventListener('submit', function(e) {
+                console.log('Form submission started');
+                console.log('Problem Type:', problemTypeSelect.value);
+                console.log('Description:', descriptionTextarea.value);
+                console.log('Picture file:', pictureInput.files[0]);
+                console.log('Location:', locationHidden.value);
+                console.log('Phone Number:', document.querySelector('input[name="PhoneNumber"]').value);
+                
+                // Remove client-side validation to let server handle it
+                console.log('Form validation passed, submitting...');
+            });
+        });
+    </script>
+}
