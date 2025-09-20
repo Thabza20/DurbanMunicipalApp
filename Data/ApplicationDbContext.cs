@@ -11,5 +11,9 @@ namespace DurbanMunicipalApp.Data
         {
         }
         public DbSet<Report> Reports { get; set; }
+        public DbSet<UserProfile> UserProfiles { get; set; }
+        public DbSet<Customer> Customers { get; set; }
+        public DbSet<Admin> Admins { get; set; }
+        public DbSet<Team> Teams { get; set; }
     }
 }
