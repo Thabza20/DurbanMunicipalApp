@@ -1,63 +1,158 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var isLoggedIn = Context.Session.GetString("UserId") != null;
+    var userType = Context.Session.GetString("UserType");
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - DurbanMunicipalApp</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@ViewData["Title"] - Durban Municipal App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/WebApplication3.styles.css" asp-append-version="true" />
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f4;
+            margin-top: 60px;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            background-color: rgba(40, 40, 40, 0.95);
+            color: #fff;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+        }
+
+            .sidebar a {
+                padding: 12px 20px;
+                text-decoration: none;
+                font-size: 18px;
+                color: #f1f1f1;
+                display: block;
+                transition: 0.3s;
+            }
+
+                .sidebar a:hover {
+                    color: #FFD700;
+                }
+
+        /* Hamburger button */
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 10px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 2;
+        }
+
+            .hamburger .line {
+                height: 3px;
+                width: 25px;
+                background-color: gold;
+                margin: 3px 0;
+            }
+
+        /* Main content */
+        .main-content {
+            transition: margin-left 0.5s;
+            padding: 16px;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="fas fa-tools me-2"></i>Water & Sanitation Services
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
-                                <i class="fas fa-home me-1"></i>Home
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Index">
-                                <i class="fas fa-list me-1"></i>All Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Create">
-                                <i class="fas fa-plus me-1"></i>Submit Report
-                            </a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
-            </div>
-        </nav>
+        <div class="hamburger" id="hamburger">
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+        </div>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <ul class="list-unstyled">
+            <li><a asp-controller="Home" asp-action="Index"><i class="fas fa-home"></i> Home</a></li>
+            <li><a asp-controller="Reports" asp-action="Index"><i class="fas fa-list"></i> All Reports</a></li>
+            <li><a asp-controller="Reports" asp-action="Create"><i class="fas fa-plus"></i> Submit Report</a></li>
+
+            @if (isLoggedIn)
+            {
+                if (userType == "Admin")
+                {
+                    <li><a asp-controller="Admin" asp-action="Dashboard"><i class="fas fa-tachometer-alt"></i> Admin Dashboard</a></li>
+                    <li><a asp-controller="Admin" asp-action="AddTeam"><i class="fas fa-users"></i> Manage Users</a></li>
+                    <li><a asp-controller="Admin" asp-action="SystemLogs"><i class="fas fa-file-alt"></i> System Logs</a></li>
+                }
+                else if (userType == "Staff")
+                {
+                    <li><a asp-controller="Staff" asp-action="Dashboard"><i class="fas fa-briefcase"></i> Staff Dashboard</a></li>
+                    <li><a asp-controller="Staff" asp-action="AssignedReports"><i class="fas fa-tasks"></i> Assigned Reports</a></li>
+                }
+                else if (userType == "Customer")
+                {
+                    <li><a asp-controller="Reports" asp-action="MyReports"><i class="fas fa-file-alt"></i> My Reports</a></li>
+                    <li><a asp-controller="Profile" asp-action="Index"><i class="fas fa-user"></i> My Profile</a></li>
+                }
+
+                <li><a asp-controller="Login" asp-action="Logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            }
+            else
+            {
+                <li><a asp-controller="Login" asp-action="Login"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                <li><a asp-controller="Login" asp-action="Register"><i class="fas fa-user-plus"></i> Register</a></li>
+            }
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        <main role="main" class="container">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - WebApplication3 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
+    <footer class="text-center py-3 mt-4 border-top">
+        <p>&copy; @DateTime.Now.Year - Durban Municipal App</p>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const hamburger = document.getElementById('hamburger');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+
+            hamburger.addEventListener('click', function () {
+                if (sidebar.style.width === "250px") {
+                    sidebar.style.width = "0";
+                    mainContent.style.marginLeft = "0";
+                } else {
+                    sidebar.style.width = "250px";
+                    mainContent.style.marginLeft = "250px";
+                }
+            });
+        });
+    </script>
+
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

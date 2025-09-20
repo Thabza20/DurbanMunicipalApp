@@ -1,14 +1,16 @@
-﻿using System;
+﻿using BCrypt.Net;
+using DurbanMunicipalApp.Data;
+using DurbanMunicipalApp.Models;
+using DurbanMunicipalApp.Models.ViewModels;
+using DurbanMunicipalApp.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-using DurbanMunicipalApp.Data;
-using DurbanMunicipalApp.Models;
-using BCrypt.Net;
-using DurbanMunicipalApp.ViewModels;
 
 namespace DurbanMunicipalApp.Controllers
 {
@@ -76,7 +78,7 @@ namespace DurbanMunicipalApp.Controllers
             if (customer != null)
             {
                 HttpContext.Session.SetString("CustomerName", $"{customer.CustomerFirstName} {customer.CustomerLastName}");
-                return RedirectToAction("CustomerDashboard", "Customer");
+                return RedirectToAction("CustomerDashboard", "Login");
             }
 
             ViewBag.Message = "Customer profile not found.";
@@ -96,6 +98,33 @@ namespace DurbanMunicipalApp.Controllers
             ViewBag.Message = "Team profile not found.";
             return View("Login");
         }
+        [HttpGet]
+       
+        public async Task<IActionResult> CustomerDashboard()
+        {
+            var userId = int.Parse(HttpContext.Session.GetString("UserId"));
+            var customer = await _db.Customers.FirstOrDefaultAsync(c => c.UserId == userId);
+            var userProfile = await _db.UserProfiles.FirstOrDefaultAsync(u => u.UserId == userId);
+
+            if (customer == null || userProfile == null) return NotFound();
+
+            // General system-wide stats (no per-customer filtering yet)
+            var reportsSubmitted = await _db.Reports.CountAsync();
+            var reportsResolved = await _db.Reports.CountAsync(r => r.Status == ReportStatus.Resolved);
+
+            var dashboardViewModel = new CustomerDashboardViewModel
+            {
+                CustomerFirstName = customer.CustomerFirstName,
+                CustomerLastName = customer.CustomerLastName,
+                Email = userProfile.Email,
+                ReportsSubmitted = reportsSubmitted,
+                ReportsResolved = reportsResolved
+            };
+
+            return View(dashboardViewModel);
+        }
+
+
 
         [HttpGet]
         public IActionResult Register()

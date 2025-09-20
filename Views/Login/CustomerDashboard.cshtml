@@ -1,0 +1,19 @@
+﻿@model DurbanMunicipalApp.Models.ViewModels.CustomerDashboardViewModel
+
+@{
+    ViewData["Title"] = "Customer Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Welcome, @Model.CustomerFirstName @Model.CustomerLastName</h2>
+
+<div class="card mt-4 p-3 shadow-sm">
+    <p><strong>Email:</strong> @Model.Email</p>
+    <p><strong>Total Reports Submitted:</strong> @Model.ReportsSubmitted</p>
+    <p><strong>Reports Resolved:</strong> @Model.ReportsResolved</p>
+</div>
+
+<div class="mt-4">
+    <a asp-controller="Report" asp-action="Create" class="btn btn-primary">Submit a New Report</a>
+    <a asp-controller="Report" asp-action="Index" class="btn btn-secondary">View My Reports</a>
+</div>

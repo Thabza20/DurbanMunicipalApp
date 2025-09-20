@@ -34,6 +34,7 @@ namespace DurbanMunicipalApp.Models
     {
         public int Id { get; set; }
 
+
         [Required(ErrorMessage = "Problem type is required")]
         [Display(Name = "Problem Type")]
         public ProblemType? ProblemType { get; set; }
