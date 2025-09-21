@@ -29,6 +29,23 @@
         .hero-section {
             background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
         }
+
+        .btn-hero {
+            transition: all 0.3s ease;
+        }
+
+            .btn-hero:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+
+        .feature-card {
+            transition: transform 0.3s ease;
+        }
+
+            .feature-card:hover {
+                transform: translateY(-5px);
+            }
     </style>
 </head>
 <body>
@@ -39,19 +56,20 @@
                 <div class="col-lg-6">
                     <h1 class="display-4 fw-bold mb-3">Report Issues Quickly</h1>
                     <p class="lead mb-4">Submit and track water-related problems in your area. Our system helps you report issues efficiently and monitor their resolution status.</p>
-                    <a href="#" class="btn btn-light btn-lg me-3">
-                        <i class="fas fa-plus me-2"></i>Submit Report
-                    </a>
-                    <a href="#" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-list me-2"></i>View Reports
-                    </a>
-
-                    <a href="#" class="btn btn-light btn-lg me-3">
-                        <i class="fas fa-plus me-2"></i>Login
-                    </a>
-                    <a href="#" class="btn btn-outline-light btn-lg">
-                        <i class="fas fa-list me-2"></i>Register
-                    </a>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="/Reports/Create" class="btn btn-light btn-lg btn-hero">
+                            <i class="fas fa-plus me-2"></i>Submit Report
+                        </a>
+                        <a href="/Reports/Index" class="btn btn-outline-light btn-lg btn-hero">
+                            <i class="fas fa-list me-2"></i>View Reports
+                        </a>
+                        <a href="/Login/Login" class="btn btn-light btn-lg btn-hero">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                        <a href="/Login/Register" class="btn btn-outline-light btn-lg btn-hero">
+                            <i class="fas fa-user-plus me-2"></i>Register
+                        </a>
+                    </div>
                 </div>
                 <div class="col-lg-6 text-center">
                     <i class="fas fa-clipboard-check fa-10x opacity-75"></i>
@@ -60,6 +78,7 @@
         </div>
     </div>
 
+    <!-- Rest of your content remains the same -->
     <!-- Debug Panel -->
     <div class="container mb-3">
         <div class="card bg-light">
@@ -175,11 +194,11 @@
         </div>
     </div>
 
-    <!-- Rest of the original content (cards, etc.) -->
+    <!-- Feature Cards -->
     <div class="container">
         <div class="row">
             <div class="col-lg-4 mb-4">
-                <div class="card h-100 border-0 shadow-sm">
+                <div class="card h-100 border-0 shadow-sm feature-card">
                     <div class="card-body text-center">
                         <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
                         <h5 class="card-title">Report Problems</h5>
@@ -188,7 +207,7 @@
                 </div>
             </div>
             <div class="col-lg-4 mb-4">
-                <div class="card h-100 border-0 shadow-sm">
+                <div class="card h-100 border-0 shadow-sm feature-card">
                     <div class="card-body text-center">
                         <i class="fas fa-map-marker-alt fa-3x text-info mb-3"></i>
                         <h5 class="card-title">Location Tracking</h5>
@@ -197,7 +216,7 @@
                 </div>
             </div>
             <div class="col-lg-4 mb-4">
-                <div class="card h-100 border-0 shadow-sm">
+                <div class="card h-100 border-0 shadow-sm feature-card">
                     <div class="card-body text-center">
                         <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
                         <h5 class="card-title">Track Progress</h5>
@@ -260,7 +279,6 @@
                 document.getElementById('debugStatus').textContent = 'Loading data...';
 
                 // For demonstration, we'll use mock data
-                // In a real application, this would fetch from your API
                 var mockData = [
                     { id: 1, problemType: 'WaterLeak', description: 'Water leak in main street', location: 'Central Durban', latitude: -29.8587, longitude: 31.0218, status: 'Submitted', submittedDate: '2023-05-15T10:30:00' },
                     { id: 2, problemType: 'NoWater', description: 'No water in the area', location: 'North Durban', latitude: -29.85, longitude: 31.02, status: 'Submitted', submittedDate: '2023-05-16T11:30:00' },
@@ -476,8 +494,6 @@
                         show = false;
                     }
 
-                    // FIXED: This condition was incorrectly checking if complaintType was truthy
-                    // but then comparing with the report's problemType
                     if (complaintType && report.problemType !== complaintType) {
                         show = false;
                     }
