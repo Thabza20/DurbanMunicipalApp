@@ -2,6 +2,7 @@
     ViewData["Title"] = "Home";
 }
 
+<!-- Hero Section -->
 <div class="hero-section bg-primary text-white py-5 mb-5">
     <div class="container">
         <div class="row align-items-center">
@@ -29,37 +30,78 @@
     </div>
 </div>
 
-<div class="container">
+<!-- Debug Panel -->
+<div class="container mb-3">
+    <div class="card bg-light">
+        <div class="card-body py-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">Debug: <span id="debugStatus">Checking data...</span></small>
+                <button id="refreshData" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Section -->
+<div class="container mb-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
+            <h4 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i>Complaints Map</h4>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <select id="areaFilter" class="form-select">
+                    <option value="">All Areas</option>
+                    <!-- Options will be populated dynamically -->
+                </select>
+                <select id="importanceFilter" class="form-select">
+                    <option value="">All Priorities</option>
+                    <option value="High">High Priority</option>
+                    <option value="Medium">Medium Priority</option>
+                    <option value="Low">Low Priority</option>
+                </select>
+                <select id="complaintFilter" class="form-select">
+                    <option value="">All Complaints</option>
+                    <!-- Options will be populated dynamically -->
+                </select>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div id="map" style="height: 400px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div class="container mb-5">
     <div class="row">
-        <div class="col-lg-4 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <h5 class="card-title">Report Problems</h5>
-                    <p class="card-text">Submit detailed reports about water leaks, quality issues, or other problems in your area.</p>
+        <div class="col-md-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Complaints by Category</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="complaintsChart" height="250"></canvas>
                 </div>
             </div>
         </div>
-        <div class="col-lg-4 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="fas fa-map-marker-alt fa-3x text-info mb-3"></i>
-                    <h5 class="card-title">Location Tracking</h5>
-                    <p class="card-text">Automatically capture your location for "No Water" reports or manually specify the problem location.</p>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Complaint Summary</h5>
                 </div>
-            </div>
-        </div>
-        <div class="col-lg-4 mb-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
-                    <h5 class="card-title">Track Progress</h5>
-                    <p class="card-text">Monitor the status of your reports from submission to resolution with real-time updates.</p>
+                <div class="card-body">
+                    <div id="complaintSummary">
+                        <p class="text-center">Select a complaint type to see details</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
+<!-- How It Works Section -->
+<div class="container">
     <div class="row mt-5">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
@@ -97,6 +139,375 @@
                             <small class="text-muted">Monitor resolution progress and receive updates</small>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include required libraries -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Map initialization and functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map centered on Durban
+        var map = L.map('map').setView([-29.8587, 31.0218], 12);
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Define color mapping for complaint types
+        var complaintColors = {
+            'WaterLeak': 'red',
+            'NoWater': 'orange',
+            'WaterQuality': 'blue',
+            'SewerIssue': 'green',
+            'Other': 'gray'
+        };
+
+        // Define priority mapping
+        var priorityMapping = {
+            'WaterLeak': 'High',
+            'NoWater': 'High',
+            'SewerIssue': 'Medium',
+            'WaterQuality': 'Medium',
+            'Other': 'Low'
+        };
+
+        // Global variables for chart and markers
+        window.complaintsChart = null;
+        window.markersLayer = null;
+        window.legend = null;
+        window.allReports = []; // Store all reports for filtering
+
+        // Add refresh button functionality
+        document.getElementById('refreshData').addEventListener('click', function() {
+            loadReportsData();
+        });
+
+        // Initial load of reports data
+        loadReportsData();
+
+        function loadReportsData() {
+            document.getElementById('debugStatus').textContent = 'Loading data...';
+
+            // Add cache busting parameter to prevent caching
+            fetch('/Home/GetReportsData?' + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Data received:', data);
+                    document.getElementById('debugStatus').textContent =
+                        `Loaded ${data.length} reports at ${new Date().toLocaleTimeString()}`;
+
+                    // Store all reports for filtering
+                    window.allReports = data;
+
+                    // Process data
+                    processMapData(data);
+                    processChartData(data);
+                    populateFilters(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById('debugStatus').textContent =
+                        'Error loading data: ' + error.message;
+
+                    // Fallback to mock data if API fails
+                    console.log('Using mock data for demonstration');
+                    var mockData = [
+                        { id: 1, problemType: 'WaterLeak', description: 'Water leak in main street', location: 'Central Durban', latitude: -29.8587, longitude: 31.0218, status: 'Submitted', submittedDate: '2023-05-15T10:30:00' },
+                        { id: 2, problemType: 'NoWater', description: 'No water in the area', location: 'North Durban', latitude: -29.85, longitude: 31.02, status: 'Submitted', submittedDate: '2023-05-16T11:30:00' },
+                        { id: 3, problemType: 'WaterQuality', description: 'Water looks muddy', location: 'South Durban', latitude: -29.87, longitude: 31.03, status: 'Submitted', submittedDate: '2023-05-17T12:30:00' }
+                    ];
+                    window.allReports = mockData;
+                    processMapData(mockData);
+                    processChartData(mockData);
+                    populateFilters(mockData);
+                });
+        }
+
+        function processMapData(reports) {
+            // Clear existing markers
+            if (window.markersLayer) {
+                map.removeLayer(window.markersLayer);
+            }
+
+            window.markersLayer = L.layerGroup().addTo(map);
+            var areas = new Set();
+            var bounds = [];
+
+            reports.forEach(function(report) {
+                // Skip reports without coordinates
+                if (!report.latitude || !report.longitude) return;
+
+                // Add area to filter options
+                if (report.location) areas.add(report.location);
+
+                // Use default color if problemType not found
+                var color = complaintColors[report.problemType] || 'black';
+
+                // Create marker with appropriate color
+                var marker = L.circleMarker([report.latitude, report.longitude], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    radius: 8
+                }).addTo(window.markersLayer);
+
+                // Store report data on marker for filtering
+                marker.reportData = report;
+
+                // Add to bounds array
+                bounds.push([report.latitude, report.longitude]);
+
+                // Add popup with report details
+                marker.bindPopup(`
+                    <strong>${report.problemType}</strong><br>
+                    ${report.description || 'No description'}<br>
+                    <small>Location: ${report.location || 'Unknown'}</small><br>
+                    <small>Submitted: ${new Date(report.submittedDate).toLocaleDateString()}</small>
+                `);
+            });
+
+            // Set map view to show all markers
+            if (bounds.length > 0) {
+                map.fitBounds(bounds);
+            }
+
+            // Add legend
+            if (window.legend) {
+                map.removeControl(window.legend);
+            }
+
+            window.legend = L.control({position: 'bottomright'});
+            window.legend.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'legend');
+                var labels = ['<strong>Complaint Types</strong>'];
+
+                for (var type in complaintColors) {
+                    labels.push(
+                        '<i style="background:' + complaintColors[type] + '"></i> ' +
+                        type
+                    );
+                }
+
+                div.innerHTML = labels.join('<br>');
+                return div;
+            };
+            window.legend.addTo(map);
+        }
+
+        function processChartData(reports) {
+            // Count complaints by type
+            var counts = {};
+            reports.forEach(function(report) {
+                if (!counts[report.problemType]) {
+                    counts[report.problemType] = 0;
+                }
+                counts[report.problemType]++;
+            });
+
+            // Prepare chart data
+            var labels = Object.keys(counts);
+            var data = Object.values(counts);
+
+            // Ensure all problem types have a color, use 'black' as default
+            var backgroundColors = labels.map(type => complaintColors[type] || 'black');
+
+            // Only call replace on valid colors
+            var borderColors = backgroundColors.map(color => {
+                return typeof color === 'string' ? color.replace('0.7', '1') : '#000000';
+            });
+
+            // Get or create chart
+            var ctx = document.getElementById('complaintsChart');
+            if (!ctx) {
+                console.error('Complaints chart canvas not found');
+                return;
+            }
+
+            ctx = ctx.getContext('2d');
+
+            // Destroy existing chart if it exists
+            if (window.complaintsChart) {
+                window.complaintsChart.destroy();
+            }
+
+            // Create new chart
+            window.complaintsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Number of Complaints',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Add click event to chart
+            ctx.canvas.onclick = function(evt) {
+                var points = window.complaintsChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                if (points.length) {
+                    var firstPoint = points[0];
+                    var label = window.complaintsChart.data.labels[firstPoint.index];
+                    updateComplaintSummary(label, reports);
+                }
+            };
+        }
+
+        function populateFilters(reports) {
+            // Populate area filter
+            var areaFilter = document.getElementById('areaFilter');
+            // Clear existing options except the first one
+            while (areaFilter.options.length > 1) {
+                areaFilter.remove(1);
+            }
+
+            var areas = [...new Set(reports.map(r => r.location).filter(l => l))].sort();
+            areas.forEach(function(area) {
+                var option = document.createElement('option');
+                option.value = area;
+                option.textContent = area;
+                areaFilter.appendChild(option);
+            });
+
+            // Populate complaint filter
+            var complaintFilter = document.getElementById('complaintFilter');
+            // Clear existing options except the first one
+            while (complaintFilter.options.length > 1) {
+                complaintFilter.remove(1);
+            }
+
+            var complaintTypes = Object.keys(complaintColors);
+            complaintTypes.forEach(function(type) {
+                var option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                complaintFilter.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            var area = document.getElementById('areaFilter').value;
+            var importance = document.getElementById('importanceFilter').value;
+            var complaintType = document.getElementById('complaintFilter').value;
+
+            console.log("Applying filters:", area, importance, complaintType);
+
+            // Filter the reports based on selections
+            var filteredReports = window.allReports.filter(function(report) {
+                var show = true;
+
+                if (area && report.location !== area) {
+                    show = false;
+                }
+
+                if (importance && priorityMapping[report.problemType] !== importance) {
+                    show = false;
+                }
+
+                if (complaintType && report.problemType !== complaintType) {
+                    show = false;
+                }
+
+                return show;
+            });
+
+            console.log("Filtered reports:", filteredReports);
+
+            // Reprocess the map and chart with filtered data
+            processMapData(filteredReports);
+            processChartData(filteredReports);
+        }
+
+        function updateComplaintSummary(complaintType, reports) {
+            var summaryDiv = document.getElementById('complaintSummary');
+            var filteredReports = reports.filter(r => r.problemType === complaintType);
+
+            var html = `
+                <h5>${complaintType} Complaints</h5>
+                <p>Total: ${filteredReports.length}</p>
+                <h6>Areas with most complaints:</h6>
+                <ul>
+            `;
+
+            // Count by area
+            var areaCounts = {};
+            filteredReports.forEach(function(report) {
+                var area = report.location || 'Unknown';
+                areaCounts[area] = (areaCounts[area] || 0) + 1;
+            });
+
+            // Sort areas by count
+            var sortedAreas = Object.keys(areaCounts).sort((a, b) => areaCounts[b] - areaCounts[a]);
+
+            // Show top 5 areas
+            sortedAreas.slice(0, 5).forEach(function(area) {
+                html += `<li>${area}: ${areaCounts[area]} complaints</li>`;
+            });
+
+            html += `</ul>`;
+            summaryDiv.innerHTML = html;
+        }
+
+        // Add event listeners for filters
+        document.getElementById('areaFilter').addEventListener('change', applyFilters);
+        document.getElementById('importanceFilter').addEventListener('change', applyFilters);
+        document.getElementById('complaintFilter').addEventListener('change', applyFilters);
+    });
+</script>
+<!-- Rest of the original content (cards, etc.) -->
+<div class="container">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Report Problems</h5>
+                    <p class="card-text">Submit detailed reports about water leaks, quality issues, or other problems in your area.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-map-marker-alt fa-3x text-info mb-3"></i>
+                    <h5 class="card-title">Location Tracking</h5>
+                    <p class="card-text">Automatically capture your location for "No Water" reports or manually specify the problem location.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Track Progress</h5>
+                    <p class="card-text">Monitor the status of your reports from submission to resolution with real-time updates.</p>
                 </div>
             </div>
         </div>
